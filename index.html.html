@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>网页呼叫 SIP</title>
+ <script src="./jssip-3.0.10.js"></script>
+</head>
+<body>
+  <h2>点击按钮拨打 SIP 分机</h2>
+  <button onclick="makeCall()">📞 呼叫</button>
+
+  <script>
+    const socket = new JsSIP.WebSocketInterface('wss://your-sip-server:8089/ws');
+    const configuration = {
+      sockets: [socket],
+      uri: 'sip:1001@your-sip-server.com',
+      password: 'yourpassword',
+    };
+
+    const ua = new JsSIP.UA(configuration);
+    ua.start();
+
+    function makeCall() {
+      const session = ua.call('sip:1001@your-sip-server.com', {
+        mediaConstraints: { audio: true, video: false },
+      });
+
+      session.on('progress', () => console.log('呼叫中...'));
+      session.on('accepted', () => console.log('通话已接听'));
+      session.on('ended', () => console.log('通话结束'));
+      session.on('failed', () => console.log('呼叫失败'));
+    }
+  </script>
+</body>
+</html>
