@@ -30,8 +30,21 @@
       ua.on('registrationFailed', (e) => console.error('❌ 注册失败', e));
       ua.on('newRTCSession', (data) => {
         session = data.session;
+
         session.on('ended', () => console.log('📞 通话结束'));
         session.on('accepted', () => console.log('📞 通话已接通'));
+
+        session.on('peerconnection', (e) => {
+          const peerconnection = e.peerconnection;
+
+          peerconnection.addEventListener('track', (event) => {
+            const remoteStream = event.streams[0];
+            const remoteAudio = document.createElement('audio');
+            remoteAudio.srcObject = remoteStream;
+            remoteAudio.autoplay = true;
+            document.body.appendChild(remoteAudio);
+          });
+        });
       });
 
       ua.start();
