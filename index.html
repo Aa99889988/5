@@ -18,7 +18,7 @@
       const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
       const configuration = {
         sockets: [socket],
-        uri: 'sip:1008600@47.98.19.153',
+        uri: 'sip:1008600@xin.anjre.cn',
         password: 'Aa6363463',
         display_name: '网页分机',
         session_timers: false
@@ -50,7 +50,7 @@
         mediaConstraints: { audio: true, video: false }
       };
 
-      session = ua.call('sip:1008611@47.98.19.153', options);
+      session = ua.call('sip:1008611@xin.anjre.cn', options);
     }
 
     function hangup() {
