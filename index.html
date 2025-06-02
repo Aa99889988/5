@@ -1,34 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>网页呼叫 SIP</title>
- <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>WebRTC SIP 测试</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jssip/3.9.0/jssip.min.js"></script>
 </head>
 <body>
-  <h2>点击按钮拨打 SIP 分机</h2>
-  <button onclick="makeCall()">📞 呼叫</button>
+  <h2>WebRTC 测试</h2>
+  <button onclick="register()">注册分机</button>
+  <button onclick="call()">呼叫10010</button>
+  <button onclick="hangup()">挂断</button>
 
   <script>
-    const socket = new JsSIP.WebSocketInterface('wss://your-sip-server:8089/ws');
-    const configuration = {
-      sockets: [socket],
-      uri: 'sip:1001@your-sip-server.com',
-      password: 'yourpassword',
-    };
+    let ua, session;
 
-    const ua = new JsSIP.UA(configuration);
-    ua.start();
+    function register() {
+      const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
+      const configuration = {
+        sockets: [socket],
+        uri: 'sip:898899@xin.anjre.cn',
+        password: 'Aa14725836900@',
+        display_name: '网页分机',
+        session_timers: false
+      };
 
-    function makeCall() {
-      const session = ua.call('sip:1001@your-sip-server.com', {
-        mediaConstraints: { audio: true, video: false },
+      ua = new JsSIP.UA(configuration);
+
+      ua.on('registered', () => console.log('✅ 已注册成功'));
+      ua.on('registrationFailed', (e) => console.error('❌ 注册失败', e));
+      ua.on('newRTCSession', (data) => {
+        session = data.session;
+        session.on('ended', () => console.log('📞 通话结束'));
+        session.on('accepted', () => console.log('📞 通话已接通'));
       });
 
-      session.on('progress', () => console.log('呼叫中...'));
-      session.on('accepted', () => console.log('通话已接听'));
-      session.on('ended', () => console.log('通话结束'));
-      session.on('failed', () => console.log('呼叫失败'));
+      ua.start();
+    }
+
+    function call() {
+      if (!ua) return alert('请先注册');
+      const eventHandlers = {
+        failed: function(e) { console.log('呼叫失败', e); },
+        ended: function(e) { console.log('通话结束'); },
+        confirmed: function(e) { console.log('通话已接通'); }
+      };
+
+      const options = {
+        eventHandlers,
+        mediaConstraints: { audio: true, video: false }
+      };
+
+      session = ua.call('sip:10010@xin.anjre.cn', options);
+    }
+
+    function hangup() {
+      if (session) session.terminate();
     }
   </script>
 </body>
