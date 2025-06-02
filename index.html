@@ -11,6 +11,9 @@
   <button onclick="call()">呼叫1008611</button>
   <button onclick="hangup()">挂断</button>
 
+  <!-- 添加音频元素 -->
+  <audio id="remoteAudio" autoplay playsinline></audio>
+
   <script>
     let ua, session;
 
@@ -39,10 +42,11 @@
 
           peerconnection.addEventListener('track', (event) => {
             const remoteStream = event.streams[0];
-            const remoteAudio = document.createElement('audio');
+            const remoteAudio = document.getElementById('remoteAudio');
             remoteAudio.srcObject = remoteStream;
-            remoteAudio.autoplay = true;
-            document.body.appendChild(remoteAudio);
+            remoteAudio.play().catch((error) => {
+              console.error('音频播放失败:', error);
+            });
           });
         });
       });
@@ -70,7 +74,5 @@
       if (session) session.terminate();
     }
   </script>
-</body>
-</html>
 </body>
 </html>
