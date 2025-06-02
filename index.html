@@ -8,7 +8,7 @@
 <body>
   <h2>WebRTC 测试</h2>
   <button onclick="register()">注册分机</button>
-  <button onclick="call()">呼叫1008611</button>
+  <button onclick="call()">呼叫6666</button>
   <button onclick="hangup()">挂断</button>
 
   <!-- 添加音频元素 -->
@@ -67,7 +67,7 @@
         mediaConstraints: { audio: true, video: false }
       };
 
-      session = ua.call('sip:1008611@xin.anjre.cn', options);
+      session = ua.call('sip:6666@xin.anjre.cn', options);
     }
 
     function hangup() {
