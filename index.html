@@ -23,7 +23,14 @@
         password: 'Aa6363463',
         display_name: '网页分机',
         session_timers: false,
-        register: true
+        register: true,
+        pcConfig: {
+          iceServers: [
+            { urls: 'stun:stun.qq.com:3478' },
+            { urls: 'stun:stun.miwifi.com:3478' },
+            { urls: 'stun:stun.cdnbye.com:3478' }
+          ]
+        }
       };
 
       ua = new JsSIP.UA(configuration);
@@ -49,6 +56,19 @@
             });
           });
         });
+
+        // 添加 ICE 候选收集超时处理
+        session.connection.addEventListener('icegatheringstatechange', () => {
+          if (session.connection.iceGatheringState === 'gathering') {
+            // 设置超时为 5 秒
+            setTimeout(() => {
+              if (session.connection.iceGatheringState !== 'complete') {
+                console.warn('⚠️ ICE 候选收集超时，继续建立连接');
+                // 继续建立连接的逻辑（如果需要）
+              }
+            }, 5000);
+          }
+        });
       });
 
       ua.start();
@@ -72,9 +92,9 @@
         mediaConstraints: { audio: true, video: false },
         pcConfig: {
           iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' }
-            // 如有需要，可添加 TURN 服务器
-            // { urls: 'turn:your.turn.server', username: 'user', credential: 'pass' }
+            { urls: 'stun:stun.qq.com:3478' },
+            { urls: 'stun:stun.miwifi.com:3478' },
+            { urls: 'stun:stun.cdnbye.com:3478' }
           ]
         }
       };
