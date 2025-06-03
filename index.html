@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
   <meta charset="UTF-8" />
   <title>WebRTC SIP 测试</title>
@@ -7,32 +7,24 @@
 </head>
 <body>
   <h2>WebRTC 测试</h2>
-  <button onclick="call()">呼叫 6666</button>
+  <button onclick="register()">注册分机</button>
+  <button onclick="call()">呼叫6666</button>
   <button onclick="hangup()">挂断</button>
 
-  <!-- 音频元素 -->
+  <!-- 添加音频元素 -->
   <audio id="remoteAudio" autoplay playsinline></audio>
 
   <script>
     let ua, session;
 
-    // 配置 STUN 服务器（适用于中国大陆）
-    const iceServers = [
-      { urls: 'stun:stun.qq.com:3478' },
-      { urls: 'stun:stun.miwifi.com:3478' },
-      { urls: 'stun:stun.cdnbye.com:3478' }
-    ];
-
-    // 自动注册分机
-    window.onload = function() {
+    function register() {
       const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
       const configuration = {
         sockets: [socket],
         uri: 'sip:1008600@xin.anjre.cn',
         password: 'Aa6363463',
         display_name: '网页分机',
-        session_timers: false,
-        iceServers: iceServers
+        session_timers: false
       };
 
       ua = new JsSIP.UA(configuration);
@@ -60,45 +52,22 @@
       });
 
       ua.start();
-    };
+    }
 
     function call() {
-      if (!ua || ua.isRegistered() === false) {
-        alert('尚未注册分机。');
-        return;
-      }
-
+      if (!ua) return alert('请先注册');
       const eventHandlers = {
-        progress: () => console.log('📞 呼叫中...'),
-        failed: (e) => console.error('❌ 呼叫失败:', e.cause),
-        ended: () => console.log('📞 通话结束'),
-        confirmed: () => console.log('📞 通话已接通')
+        failed: function(e) { console.log('呼叫失败', e); },
+        ended: function(e) { console.log('通话结束'); },
+        confirmed: function(e) { console.log('通话已接通'); }
       };
 
       const options = {
         eventHandlers,
-        mediaConstraints: { audio: true, video: false },
-        pcConfig: {
-          iceServers: iceServers
-        }
+        mediaConstraints: { audio: true, video: false }
       };
 
       session = ua.call('sip:6666@xin.anjre.cn', options);
-
-      // 设置 ICE 候选收集超时为 5 秒
-      const pc = session.connection;
-      let iceGatheringTimeout = setTimeout(() => {
-        if (pc.iceGatheringState !== 'complete') {
-          console.warn('⚠️ ICE 候选收集超时，继续建立连接');
-          // 继续建立连接的逻辑（如果需要）
-        }
-      }, 5000);
-
-      pc.addEventListener('icegatheringstatechange', () => {
-        if (pc.iceGatheringState === 'complete') {
-          clearTimeout(iceGatheringTimeout);
-        }
-      });
     }
 
     function hangup() {
