@@ -2,51 +2,65 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>WebRTC SIP 测试</title>
+  <title>客户通话页面</title>
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
 </head>
 <body>
-  <h2>WebRTC 测试</h2>
-  <button onclick="register()">注册分机</button>
-  <button onclick="call()">呼叫6666</button>
+  <h2>请输入您的信息</h2>
+
+  <label>姓名：</label>
+  <input type="text" id="name" placeholder="请输入您的姓名" /><br><br>
+
+  <label>手机号：</label>
+  <input type="text" id="phone" placeholder="请输入您的手机号" /><br><br>
+
+  <button onclick="startCall()">开始通话</button>
   <button onclick="hangup()">挂断</button>
 
-  <!-- 添加音频元素 -->
   <audio id="remoteAudio" autoplay playsinline></audio>
 
   <script>
     let ua, session;
 
-    function register() {
+    function startCall() {
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+
+      if (!name || !phone) {
+        alert('请填写姓名和手机号');
+        return;
+      }
+
+      const displayName = `${name} ${phone}`;
       const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
       const configuration = {
         sockets: [socket],
         uri: 'sip:1008600@xin.anjre.cn',
         password: 'Aa6363463',
-        display_name: '网页分机',
+        display_name: displayName,
         session_timers: false
       };
 
       ua = new JsSIP.UA(configuration);
 
-      ua.on('registered', () => console.log('✅ 已注册成功'));
-      ua.on('registrationFailed', (e) => console.error('❌ 注册失败', e));
+      ua.on('registered', () => {
+        console.log('✅ 已注册成功，准备呼叫');
+        makeCall();
+      });
+
+      ua.on('registrationFailed', (e) => {
+        console.error('❌ 注册失败', e);
+      });
+
       ua.on('newRTCSession', (data) => {
         session = data.session;
 
-        session.on('ended', () => console.log('📞 通话结束'));
         session.on('accepted', () => console.log('📞 通话已接通'));
+        session.on('ended', () => console.log('📞 通话结束'));
 
         session.on('peerconnection', (e) => {
-          const peerconnection = e.peerconnection;
-
-          peerconnection.addEventListener('track', (event) => {
-            const remoteStream = event.streams[0];
-            const remoteAudio = document.getElementById('remoteAudio');
-            remoteAudio.srcObject = remoteStream;
-            remoteAudio.play().catch((error) => {
-              console.error('音频播放失败:', error);
-            });
+          e.peerconnection.addEventListener('track', (event) => {
+            document.getElementById('remoteAudio').srcObject = event.streams[0];
           });
         });
       });
@@ -54,16 +68,8 @@
       ua.start();
     }
 
-    function call() {
-      if (!ua) return alert('请先注册');
-      const eventHandlers = {
-        failed: function(e) { console.log('呼叫失败', e); },
-        ended: function(e) { console.log('通话结束'); },
-        confirmed: function(e) { console.log('通话已接通'); }
-      };
-
+    function makeCall() {
       const options = {
-        eventHandlers,
         mediaConstraints: { audio: true, video: false }
       };
 
