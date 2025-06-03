@@ -8,7 +8,6 @@
 </head>
 <body>
   <h2>WebRTC 测试</h2>
-  <button onclick="register()">注册分机</button>
   <button onclick="call()">呼叫6666</button>
   <button onclick="hangup()">挂断</button>
   <audio id="remoteAudio" autoplay playsinline></audio>
@@ -16,17 +15,7 @@
   <script>
     let ua, session;
 
-    async function register() {
-      try {
-        // 请求麦克风权限
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        console.log('🎤 麦克风权限已获取');
-      } catch (err) {
-        console.error('❌ 无法获取麦克风权限:', err);
-        alert('请允许访问麦克风以进行通话。');
-        return;
-      }
-
+    function initialize() {
       const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
       const configuration = {
         sockets: [socket],
@@ -99,6 +88,9 @@
         console.log('📞 通话已挂断');
       }
     }
+
+    // 页面加载完成后初始化
+    window.addEventListener('load', initialize);
   </script>
 </body>
 </html>
