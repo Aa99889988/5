@@ -3,19 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <title>WebRTC SIP 测试</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
 </head>
 <body>
   <h2>WebRTC 测试</h2>
-  <button onclick="call()">呼叫6666</button>
+  <button onclick="call()">呼叫 6666</button>
   <button onclick="hangup()">挂断</button>
+
+  <!-- 音频元素 -->
   <audio id="remoteAudio" autoplay playsinline></audio>
 
   <script>
     let ua, session;
 
-    function initialize() {
+    // 配置 STUN 服务器（适用于中国大陆）
+    const iceServers = [
+      { urls: 'stun:stun.qq.com:3478' },
+      { urls: 'stun:stun.miwifi.com:3478' },
+      { urls: 'stun:stun.cdnbye.com:3478' }
+    ];
+
+    // 自动注册分机
+    window.onload = function() {
       const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
       const configuration = {
         sockets: [socket],
@@ -23,26 +32,18 @@
         password: 'Aa6363463',
         display_name: '网页分机',
         session_timers: false,
-        register: true,
-        pcConfig: {
-          iceServers: [
-            { urls: 'stun:stun.qq.com:3478' },
-            { urls: 'stun:stun.miwifi.com:3478' },
-            { urls: 'stun:stun.cdnbye.com:3478' }
-          ]
-        }
+        iceServers: iceServers
       };
 
       ua = new JsSIP.UA(configuration);
 
       ua.on('registered', () => console.log('✅ 已注册成功'));
-      ua.on('registrationFailed', (e) => console.error('❌ 注册失败:', e.cause));
+      ua.on('registrationFailed', (e) => console.error('❌ 注册失败', e));
       ua.on('newRTCSession', (data) => {
         session = data.session;
 
         session.on('ended', () => console.log('📞 通话结束'));
         session.on('accepted', () => console.log('📞 通话已接通'));
-        session.on('failed', (e) => console.error('❌ 通话失败:', e.cause));
 
         session.on('peerconnection', (e) => {
           const peerconnection = e.peerconnection;
@@ -52,31 +53,18 @@
             const remoteAudio = document.getElementById('remoteAudio');
             remoteAudio.srcObject = remoteStream;
             remoteAudio.play().catch((error) => {
-              console.error('🎧 音频播放失败:', error);
+              console.error('音频播放失败:', error);
             });
           });
-        });
-
-        // 添加 ICE 候选收集超时处理
-        session.connection.addEventListener('icegatheringstatechange', () => {
-          if (session.connection.iceGatheringState === 'gathering') {
-            // 设置超时为 5 秒
-            setTimeout(() => {
-              if (session.connection.iceGatheringState !== 'complete') {
-                console.warn('⚠️ ICE 候选收集超时，继续建立连接');
-                // 继续建立连接的逻辑（如果需要）
-              }
-            }, 5000);
-          }
         });
       });
 
       ua.start();
-    }
+    };
 
     function call() {
       if (!ua || ua.isRegistered() === false) {
-        alert('请先注册分机。');
+        alert('尚未注册分机。');
         return;
       }
 
@@ -91,26 +79,31 @@
         eventHandlers,
         mediaConstraints: { audio: true, video: false },
         pcConfig: {
-          iceServers: [
-            { urls: 'stun:stun.qq.com:3478' },
-            { urls: 'stun:stun.miwifi.com:3478' },
-            { urls: 'stun:stun.cdnbye.com:3478' }
-          ]
+          iceServers: iceServers
         }
       };
 
       session = ua.call('sip:6666@xin.anjre.cn', options);
+
+      // 设置 ICE 候选收集超时为 5 秒
+      const pc = session.connection;
+      let iceGatheringTimeout = setTimeout(() => {
+        if (pc.iceGatheringState !== 'complete') {
+          console.warn('⚠️ ICE 候选收集超时，继续建立连接');
+          // 继续建立连接的逻辑（如果需要）
+        }
+      }, 5000);
+
+      pc.addEventListener('icegatheringstatechange', () => {
+        if (pc.iceGatheringState === 'complete') {
+          clearTimeout(iceGatheringTimeout);
+        }
+      });
     }
 
     function hangup() {
-      if (session) {
-        session.terminate();
-        console.log('📞 通话已挂断');
-      }
+      if (session) session.terminate();
     }
-
-    // 页面加载完成后初始化
-    window.addEventListener('load', initialize);
   </script>
 </body>
 </html>
