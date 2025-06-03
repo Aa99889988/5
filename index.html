@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
@@ -7,11 +7,17 @@
 </head>
 <body>
   <h2>WebRTC 测试</h2>
+
+  <!-- 客户填写信息 -->
+  <label>姓名: <input type="text" id="callerName" placeholder="请输入姓名" /></label><br />
+  <label>手机号: <input type="text" id="callerNumber" placeholder="请输入手机号" /></label><br /><br />
+
+  <!-- 控制按钮 -->
   <button onclick="register()">注册分机</button>
-  <button onclick="call()">呼叫9001</button>
+  <button onclick="call()">呼叫客服</button>
   <button onclick="hangup()">挂断</button>
 
-  <!-- 添加音频元素 -->
+  <!-- 音频播放 -->
   <audio id="remoteAudio" autoplay playsinline></audio>
 
   <script>
@@ -19,11 +25,16 @@
 
     function register() {
       const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
+
+      // 获取用户填写的姓名和号码
+      const callerName = document.getElementById('callerName').value || '网页客户';
+      const callerNumber = document.getElementById('callerNumber').value || '000000';
+
       const configuration = {
         sockets: [socket],
         uri: 'sip:1008600@xin.anjre.cn',
         password: 'Aa6363463',
-        display_name: '网页分机',
+        display_name: `${callerName} ${callerNumber}`,  // 👈 传入来电显示
         session_timers: false
       };
 
@@ -44,9 +55,6 @@
             const remoteStream = event.streams[0];
             const remoteAudio = document.getElementById('remoteAudio');
             remoteAudio.srcObject = remoteStream;
-            remoteAudio.play().catch((error) => {
-              console.error('音频播放失败:', error);
-            });
           });
         });
       });
@@ -56,6 +64,7 @@
 
     function call() {
       if (!ua) return alert('请先注册');
+
       const eventHandlers = {
         failed: function(e) { console.log('呼叫失败', e); },
         ended: function(e) { console.log('通话结束'); },
@@ -67,7 +76,8 @@
         mediaConstraints: { audio: true, video: false }
       };
 
-      session = ua.call('sip:9001@xin.anjre.cn', options);
+      // 拨打客服分机 6666
+      session = ua.call('sip:6666@xin.anjre.cn', options);
     }
 
     function hangup() {
