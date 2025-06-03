@@ -1,87 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>WebRTC SIP 测试</title>
+  <meta charset="utf-8">
+  <title>网页呼叫 SIP</title>
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
 </head>
 <body>
-  <h2>WebRTC 测试</h2>
-
-  <!-- 客户填写信息 -->
-  <label>姓名: <input type="text" id="callerName" placeholder="请输入姓名" /></label><br />
-  <label>手机号: <input type="text" id="callerNumber" placeholder="请输入手机号" /></label><br /><br />
-
-  <!-- 控制按钮 -->
-  <button onclick="register()">注册分机</button>
-  <button onclick="call()">呼叫客服</button>
-  <button onclick="hangup()">挂断</button>
-
-  <!-- 音频播放 -->
-  <audio id="remoteAudio" autoplay playsinline></audio>
+  <h2>点击按钮拨打 SIP 分机 9001</h2>
+  <button onclick="makeCall()">📞 呼叫 9001</button>
 
   <script>
-    let ua, session;
+    const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
+    const configuration = {
+      sockets: [socket],
+      uri: 'sip:100800@123.xin.anjre.cn',
+      password: 'Aa147258369@',
+      display_name: '网页客户',
+      session_timers: false,
+      register: true
+    };
 
-    function register() {
-      const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
+    const ua = new JsSIP.UA(configuration);
 
-      // 获取用户填写的姓名和号码
-      const callerName = document.getElementById('callerName').value || '网页客户';
-      const callerNumber = document.getElementById('callerNumber').value || '000000';
+    ua.on('connected', () => console.log('已连接到 SIP WebSocket'));
+    ua.on('registered', () => console.log('✅ 注册成功'));
+    ua.on('registrationFailed', (e) => console.error('❌ 注册失败', e));
+    ua.on('disconnected', () => console.log('❗ WebSocket 断开'));
 
-      const configuration = {
-        sockets: [socket],
-        uri: 'sip:1008600@xin.anjre.cn',
-        password: 'Aa6363463',
-        display_name: `${callerName} ${callerNumber}`,  // 👈 传入来电显示
-        session_timers: false
-      };
+    ua.start();
 
-      ua = new JsSIP.UA(configuration);
-
-      ua.on('registered', () => console.log('✅ 已注册成功'));
-      ua.on('registrationFailed', (e) => console.error('❌ 注册失败', e));
-      ua.on('newRTCSession', (data) => {
-        session = data.session;
-
-        session.on('ended', () => console.log('📞 通话结束'));
-        session.on('accepted', () => console.log('📞 通话已接通'));
-
-        session.on('peerconnection', (e) => {
-          const peerconnection = e.peerconnection;
-
-          peerconnection.addEventListener('track', (event) => {
-            const remoteStream = event.streams[0];
-            const remoteAudio = document.getElementById('remoteAudio');
-            remoteAudio.srcObject = remoteStream;
-          });
-        });
+    function makeCall() {
+      const session = ua.call('sip:9001@123.xin.anjre.cn', {
+        mediaConstraints: { audio: true, video: false },
       });
 
-      ua.start();
-    }
-
-    function call() {
-      if (!ua) return alert('请先注册');
-
-      const eventHandlers = {
-        failed: function(e) { console.log('呼叫失败', e); },
-        ended: function(e) { console.log('通话结束'); },
-        confirmed: function(e) { console.log('通话已接通'); }
-      };
-
-      const options = {
-        eventHandlers,
-        mediaConstraints: { audio: true, video: false }
-      };
-
-      // 拨打客服分机 6666
-      session = ua.call('sip:6666@xin.anjre.cn', options);
-    }
-
-    function hangup() {
-      if (session) session.terminate();
+      session.on('progress', () => console.log('📞 呼叫中...'));
+      session.on('accepted', () => console.log('✅ 通话已接听'));
+      session.on('ended', () => console.log('🛑 通话结束'));
+      session.on('failed', (e) => console.error('❌ 呼叫失败', e));
     }
   </script>
 </body>
