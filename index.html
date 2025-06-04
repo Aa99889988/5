@@ -5,30 +5,15 @@
   <title>网页呼叫 SIP</title>
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
   <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      font-family: sans-serif;
-    }
-    button {
-      font-size: 1.5em;
-      padding: 10px 20px;
-      margin: 10px;
-    }
-    #status {
-      margin-top: 20px;
-      font-size: 1.2em;
-      color: green;
-    }
+    body { text-align: center; margin-top: 50px; font-family: sans-serif; }
+    button { font-size: 18px; padding: 10px 20px; margin: 10px; }
+    #status { margin-top: 20px; font-size: 16px; color: #333; }
   </style>
 </head>
 <body>
   <button id="callButton">📞 呼叫客服</button>
-  <button id="hangupButton" disabled>🛑 挂断</button>
-  <div id="status">未连接</div>
+  <button id="hangupButton" style="display:none;">🛑 挂断</button>
+  <div id="status">状态：未连接</div>
   <audio id="audioRemote" autoplay></audio>
 
   <script>
@@ -41,66 +26,46 @@
       session_timers: false,
       register: true
     };
-
     const ua = new JsSIP.UA(configuration);
-    let session = null;
-
-    ua.on('connected', () => {
-      document.getElementById('status').textContent = '已连接到 SIP WebSocket';
-    });
-
-    ua.on('registered', () => {
-      document.getElementById('status').textContent = '✅ 注册成功';
-    });
-
-    ua.on('registrationFailed', (e) => {
-      document.getElementById('status').textContent = '❌ 注册失败';
-      console.error('注册失败', e);
-    });
-
-    ua.on('disconnected', () => {
-      document.getElementById('status').textContent = '❗ WebSocket 断开';
-    });
-
     ua.start();
 
-    document.getElementById('callButton').addEventListener('click', () => {
+    const callButton = document.getElementById('callButton');
+    const hangupButton = document.getElementById('hangupButton');
+    const statusDiv = document.getElementById('status');
+    const audio = document.getElementById('audioRemote');
+    let session = null;
+
+    ua.on('connected', () => statusDiv.textContent = '状态：已连接到 SIP WebSocket');
+    ua.on('registered', () => statusDiv.textContent = '状态：✅ 注册成功');
+    ua.on('registrationFailed', (e) => statusDiv.textContent = '状态：❌ 注册失败');
+    ua.on('disconnected', () => statusDiv.textContent = '状态：❗ WebSocket 断开');
+
+    callButton.addEventListener('click', () => {
       session = ua.call('sip:9901@xin.anjre.cn', {
-        mediaConstraints: { audio: true, video: false },
-        rtcOfferConstraints: {
-          offerToReceiveAudio: 1,
-          offerToReceiveVideo: 0
-        }
+        mediaConstraints: { audio: true, video: false }
       });
 
       session.on('progress', () => {
-        document.getElementById('status').textContent = '📞 振铃中...';
+        statusDiv.textContent = '状态：📞 呼叫中...';
+        hangupButton.style.display = 'inline';
       });
-
-      session.on('accepted', () => {
-        document.getElementById('status').textContent = '✅ 通话已接听';
-        document.getElementById('hangupButton').disabled = false;
-      });
-
+      session.on('accepted', () => statusDiv.textContent = '状态：✅ 通话已接听');
       session.on('ended', () => {
-        document.getElementById('status').textContent = '🛑 通话结束';
-        document.getElementById('hangupButton').disabled = true;
+        statusDiv.textContent = '状态：🛑 通话结束';
+        hangupButton.style.display = 'none';
       });
-
       session.on('failed', (e) => {
-        document.getElementById('status').textContent = '❌ 呼叫失败';
-        console.error('呼叫失败', e);
-        document.getElementById('hangupButton').disabled = true;
+        statusDiv.textContent = '状态：❌ 呼叫失败';
+        hangupButton.style.display = 'none';
       });
 
       session.connection.addEventListener('addstream', function (e) {
-        const audio = document.getElementById('audioRemote');
         audio.srcObject = e.stream;
         audio.play().catch(err => console.warn('自动播放失败:', err));
       });
     });
 
-    document.getElementById('hangupButton').addEventListener('click', () => {
+    hangupButton.addEventListener('click', () => {
       if (session) {
         session.terminate();
       }
