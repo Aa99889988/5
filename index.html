@@ -6,15 +6,15 @@
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
 </head>
 <body>
-  <h2>点击按钮拨打 SIP 分机 10010010</h2>
-  <button onclick="makeCall()">📞 呼叫 9001</button>
+  <h2>点击按钮拨打 SIP 分机 9901</h2>
+  <button onclick="makeCall()">📞 呼叫 9901</button>
 
   <script>
-    const socket = new JsSIP.WebSocketInterface('wss://123.xin.anjre.cn:8089/ws');
+    const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
     const configuration = {
       sockets: [socket],
-      uri: 'sip:100800@123.xin.anjre.cn',
-      password: 'Aa147258369@',
+      uri: 'sip:100110@xin.anjre.cn',
+      password: 'Aa6363463@',
       display_name: '网页客户',
       session_timers: false,
       register: true
@@ -30,7 +30,7 @@
     ua.start();
 
     function makeCall() {
-      const session = ua.call('sip:1001010@123.xin.anjre.cn', {
+      const session = ua.call('sip:9901@xin.anjre.cn', {
         mediaConstraints: { audio: true, video: false },
       });
 
