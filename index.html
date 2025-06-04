@@ -33,10 +33,10 @@
   </style>
 </head>
 <body>
-  <button id="callButton" onclick="makeCall()">📞 呼叫客服</button>
-  <button id="hangupButton" onclick="hangupCall()" disabled>🛑 挂断</button>
+  <button id="callButton">📞 呼叫客服</button>
+  <button id="hangupButton" disabled>🛑 挂断</button>
   <p id="callStatus">未呼叫</p>
-  <audio id="audioRemote" autoplay></audio>
+  <video id="audioRemote" autoplay muted playsinline style="display:none;"></video>
 
   <script>
     // 1. 设置 SIP WebSocket
@@ -73,9 +73,20 @@
     }
 
     // 7. 拨打电话函数
-    function makeCall() {
+    async function makeCall() {
       if (isCalling) {
         console.warn('呼叫已在进行中，请勿重复点击。');
+        return;
+      }
+
+      try {
+        // 请求媒体权限
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // 停止所有轨道，释放资源
+        stream.getTracks().forEach(track => track.stop());
+      } catch (error) {
+        console.error('获取媒体权限失败:', error);
+        updateUI('无法访问麦克风');
         return;
       }
 
@@ -85,16 +96,26 @@
       document.getElementById('hangupButton').disabled = false;
 
       const session = ua.call('sip:9901@xin.anjre.cn', {
-        mediaConstraints: { audio: true, video: false }
+        mediaConstraints: { audio: true, video: false },
+        rtcOfferConstraints: {
+          offerToReceiveAudio: 1,
+          offerToReceiveVideo: 0
+        }
       });
 
       currentSession = session;
 
       // 监听媒体流（播放远程音频）
-      session.connection.addEventListener('addstream', function (e) {
+      session.connection.addEventListener('track', function (e) {
         const audio = document.getElementById('audioRemote');
-        audio.srcObject = e.stream;
-        audio.play().catch(err => console.warn('自动播放失败:', err));
+        if (audio.srcObject !== e.streams[0]) {
+          audio.srcObject = e.streams[0];
+          audio.muted = false;
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(err => console.warn('自动播放失败:', err));
+          }
+        }
       });
 
       // 呼叫事件处理
@@ -123,6 +144,10 @@
         currentSession.terminate();
       }
     }
+
+    // 9. 绑定按钮事件
+    document.getElementById('callButton').addEventListener('click', makeCall);
+    document.getElementById('hangupButton').addEventListener('click', hangupCall);
   </script>
 </body>
 </html>
