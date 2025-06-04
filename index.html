@@ -53,7 +53,7 @@
   <div id="callStatus">未呼叫</div>
   <audio id="audioRemote" autoplay></audio>
 
-  <!-- ✅ 必须放在页面最后，先引入 JsSIP -->
+  <!-- ✅ 引入 JsSIP 和适配库 -->
   <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
   <script>
@@ -96,7 +96,8 @@
         hangupButton.disabled = false;
         updateStatus("正在呼叫...");
 
-        session = ua.call('sip:9901@xin.anjre.cn', {
+        // ✅ 改为拨打队列80088
+        session = ua.call('sip:80088@xin.anjre.cn', {
           mediaConstraints: { audio: true, video: false },
           rtcOfferConstraints: {
             offerToReceiveAudio: 1,
