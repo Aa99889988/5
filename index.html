@@ -1,153 +1,79 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <title>网页呼叫客服</title>
-  <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      background-color: #f0f2f5;
-    }
-    #callButton, #hangupButton {
-      padding: 12px 24px;
-      font-size: 18px;
-      margin: 10px;
-      cursor: pointer;
-    }
-    #callButton:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
-    #callStatus {
-      margin-top: 20px;
-      font-size: 16px;
-      color: #333;
-    }
-  </style>
+<html>
+<head><meta charset="utf-8"><title>JsSIP 移动端 SIP 通话示例</title>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script src="https://unpkg.com/jssip@3.10.1/dist/jssip.min.js"></script>
 </head>
 <body>
-  <button id="callButton">📞 呼叫客服</button>
-  <button id="hangupButton" disabled>🛑 挂断</button>
-  <p id="callStatus">未呼叫</p>
-  <video id="audioRemote" autoplay muted playsinline style="display:none;"></video>
+  <button id="callButton">呼叫客服</button>
+  <button id="hangupButton" disabled>挂断</button>
+  <p id="status">就绪</p>
+  <audio id="remoteAudio" autoplay playsinline></audio>
 
-  <script>
-    // 1. 设置 SIP WebSocket
-    const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
+<script>
+// 初始化 JsSIP UA
+const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
+const configuration = {
+  sockets: [socket],
+  uri: 'sip:100110@xin.anjre.cn',
+  password: 'Aa6363463@'
+};
+const ua = new JsSIP.UA(configuration);
+ua.start();
 
-    // 2. SIP UA 配置
-    const configuration = {
-      sockets: [socket],
-      uri: 'sip:100110@xin.anjre.cn',
-      password: 'Aa6363463@',
-      display_name: '网页客户',
-      session_timers: false,
-      register: true
-    };
+// 获取页面元素
+const callButton = document.getElementById('callButton');
+const hangupButton = document.getElementById('hangupButton');
+const statusElem = document.getElementById('status');
+const remoteAudio = document.getElementById('remoteAudio');
+let session = null;
 
-    // 3. 初始化 UA
-    const ua = new JsSIP.UA(configuration);
+// 点击“呼叫客服”按钮发起呼叫
+callButton.addEventListener('click', () => {
+  session = ua.call('sip:9901@xin.anjre.cn', {
+    mediaConstraints: { audio: true, video: false },
+    pcConfig: { iceServers: [] }  // 禁用 STUN/TURN
+  });
+  statusElem.innerText = '振铃中...';
+  callButton.disabled = true;
+  hangupButton.disabled = false;
 
-    // 4. UA 状态事件
-    ua.on('connected', () => console.log('已连接到 SIP WebSocket'));
-    ua.on('registered', () => console.log('✅ 注册成功'));
-    ua.on('registrationFailed', (e) => console.error('❌ 注册失败', e));
-    ua.on('disconnected', () => console.log('❗ WebSocket 断开'));
+  // 呼叫状态事件监听
+  session.on('progress', () => {
+    statusElem.innerText = '振铃中...';
+  });
+  session.on('confirmed', () => {
+    statusElem.innerText = '通话中';
+  });
+  session.on('ended', () => {
+    statusElem.innerText = '通话结束';
+    callButton.disabled = false;
+    hangupButton.disabled = true;
+  });
+  session.on('failed', (e) => {
+    statusElem.innerText = '通话失败: ' + e.cause;
+    callButton.disabled = false;
+    hangupButton.disabled = true;
+  });
 
-    ua.start();
-
-    // 5. 通话状态控制
-    let isCalling = false;
-    let currentSession = null;
-
-    // 6. 更新 UI 状态
-    function updateUI(status) {
-      document.getElementById('callStatus').textContent = status;
-    }
-
-    // 7. 拨打电话函数
-    async function makeCall() {
-      if (isCalling) {
-        console.warn('呼叫已在进行中，请勿重复点击。');
-        return;
+  // 监听 PeerConnection 的 track 事件获取远端音频
+  session.on('peerconnection', (e) => {
+    const pc = e.peerconnection;
+    pc.addEventListener('track', (ev) => {
+      if (ev.track.kind === 'audio') {
+        const stream = ev.streams[0] || new MediaStream([ev.track]);
+        remoteAudio.srcObject = stream;
       }
+    });
+  });
+});
 
-      try {
-        // 请求媒体权限
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // 停止所有轨道，释放资源
-        stream.getTracks().forEach(track => track.stop());
-      } catch (error) {
-        console.error('获取媒体权限失败:', error);
-        updateUI('无法访问麦克风');
-        return;
-      }
-
-      isCalling = true;
-      updateUI('正在呼叫...');
-      document.getElementById('callButton').disabled = true;
-      document.getElementById('hangupButton').disabled = false;
-
-      const session = ua.call('sip:9901@xin.anjre.cn', {
-        mediaConstraints: { audio: true, video: false },
-        rtcOfferConstraints: {
-          offerToReceiveAudio: 1,
-          offerToReceiveVideo: 0
-        }
-      });
-
-      currentSession = session;
-
-      // 监听媒体流（播放远程音频）
-      session.connection.addEventListener('track', function (e) {
-        const audio = document.getElementById('audioRemote');
-        if (audio.srcObject !== e.streams[0]) {
-          audio.srcObject = e.streams[0];
-          audio.muted = false;
-          const playPromise = audio.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(err => console.warn('自动播放失败:', err));
-          }
-        }
-      });
-
-      // 呼叫事件处理
-      session.on('progress', () => updateUI('振铃中...'));
-      session.on('accepted', () => updateUI('通话中'));
-      session.on('ended', () => {
-        updateUI('通话已结束');
-        isCalling = false;
-        document.getElementById('callButton').disabled = false;
-        document.getElementById('hangupButton').disabled = true;
-        currentSession = null;
-      });
-      session.on('failed', (e) => {
-        updateUI('呼叫失败');
-        console.error('呼叫失败:', e);
-        isCalling = false;
-        document.getElementById('callButton').disabled = false;
-        document.getElementById('hangupButton').disabled = true;
-        currentSession = null;
-      });
-    }
-
-    // 8. 挂断电话函数
-    function hangupCall() {
-      if (currentSession) {
-        currentSession.terminate();
-      }
-    }
-
-    // 9. 绑定按钮事件
-    document.getElementById('callButton').addEventListener('click', makeCall);
-    document.getElementById('hangupButton').addEventListener('click', hangupCall);
-  </script>
+// 点击“挂断”按钮结束通话
+hangupButton.addEventListener('click', () => {
+  if (session) {
+    session.terminate();
+  }
+});
+</script>
 </body>
 </html>
