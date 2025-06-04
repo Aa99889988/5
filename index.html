@@ -8,6 +8,12 @@
 <body>
   <h2>点击按钮拨打 SIP 分机 9901</h2>
   <button onclick="makeCall()">📞 呼叫 9901</button>
+  <button onclick="hangUp()">🛑 挂断通话</button>
+
+  <!-- 远端音频播放 -->
+  <audio id="remoteAudio" autoplay></audio>
+  <!-- 来电响铃音（可自定义 ring.mp3） -->
+  <audio id="ringtone" src="ring.mp3" preload="auto" style="display: none;"></audio>
 
   <script>
     const socket = new JsSIP.WebSocketInterface('wss://xin.anjre.cn:8089/ws');
@@ -21,23 +27,74 @@
     };
 
     const ua = new JsSIP.UA(configuration);
+    let currentSession = null;
 
-    ua.on('connected', () => console.log('已连接到 SIP WebSocket'));
+    ua.on('connected', () => console.log('✅ 已连接 SIP WebSocket'));
     ua.on('registered', () => console.log('✅ 注册成功'));
-    ua.on('registrationFailed', (e) => console.error('❌ 注册失败', e));
-    ua.on('disconnected', () => console.log('❗ WebSocket 断开'));
+    ua.on('registrationFailed', e => console.error('❌ 注册失败', e));
+    ua.on('disconnected', () => console.log('❗ WebSocket 已断开'));
+
+    // 来电处理
+    ua.on('newRTCSession', function(data) {
+      const session = data.session;
+
+      if (session.direction === 'incoming') {
+        console.log('📲 收到来电');
+        const ringtone = document.getElementById('ringtone');
+        ringtone.play();
+
+        session.on('ended', () => {
+          ringtone.pause();
+          ringtone.currentTime = 0;
+          console.log('📴 来电结束');
+        });
+
+        session.on('failed', () => {
+          ringtone.pause();
+          ringtone.currentTime = 0;
+          console.log('❌ 来电失败');
+        });
+
+        // 自动接听
+        session.answer({
+          mediaConstraints: { audio: true, video: false }
+        });
+
+        attachAudio(session);
+        currentSession = session;
+      }
+    });
 
     ua.start();
 
     function makeCall() {
       const session = ua.call('sip:9901@xin.anjre.cn', {
-        mediaConstraints: { audio: true, video: false },
+        mediaConstraints: { audio: true, video: false }
       });
 
       session.on('progress', () => console.log('📞 呼叫中...'));
       session.on('accepted', () => console.log('✅ 通话已接听'));
       session.on('ended', () => console.log('🛑 通话结束'));
-      session.on('failed', (e) => console.error('❌ 呼叫失败', e));
+      session.on('failed', e => console.error('❌ 呼叫失败', e));
+
+      attachAudio(session);
+      currentSession = session;
+    }
+
+    function hangUp() {
+      if (currentSession) {
+        currentSession.terminate();
+        console.log('📴 通话已挂断');
+      }
+    }
+
+    function attachAudio(session) {
+      session.connection.addEventListener('track', function(e) {
+        const remoteAudio = document.getElementById('remoteAudio');
+        if (remoteAudio.srcObject !== e.streams[0]) {
+          remoteAudio.srcObject = e.streams[0];
+        }
+      });
     }
   </script>
 </body>
