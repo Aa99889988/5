@@ -3,57 +3,51 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>在线客服中心</title>
+  <title>网页呼叫客服</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f0f2f5;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #007bff;
-      color: white;
-      padding: 20px 0;
-      text-align: center;
-    }
-    .container {
+      background-image: url('https://www.pexels.com/photo/people-working-in-a-call-center-3182763/');
+      background-size: cover;
+      background-position: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-    }
-    .avatar-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 20px;
+      height: 100vh;
+      margin: 0;
+      color: #fff;
+      text-shadow: 1px 1px 2px #000;
     }
     .avatar {
       width: 120px;
       height: 120px;
       border-radius: 50%;
-      background-color: #ccc;
-      background-image: url('您的客服头像图片URL');
-      background-size: cover;
-      background-position: center;
-      margin-bottom: 10px;
+      background-color: #fff;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
     }
-    .avatar-text {
-      font-size: 16px;
-      color: #555;
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .description {
+      max-width: 600px;
       text-align: center;
-    }
-    .buttons {
-      margin: 20px 0;
-    }
-    button {
-      padding: 15px 30px;
+      margin-bottom: 30px;
       font-size: 18px;
-      margin: 0 10px;
+      line-height: 1.5;
+    }
+    #callButton, #hangupButton {
+      padding: 18px 36px;
+      font-size: 22px;
+      margin: 15px;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
     }
     #callButton {
@@ -73,49 +67,33 @@
       cursor: not-allowed;
     }
     #callStatus {
-      font-size: 16px;
-      color: #333;
+      font-size: 18px;
       margin-top: 10px;
-    }
-    .instructions {
-      margin-top: 30px;
-      text-align: center;
-      color: #555;
-    }
-    .instructions h2 {
-      margin-bottom: 10px;
-    }
-    .instructions p {
-      margin: 5px 0;
+      color: #fff;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>欢迎来到在线客服中心</h1>
-  </header>
-  <div class="container">
-    <div class="avatar-container">
-      <div class="avatar"></div>
-      <div class="avatar-text">链接内容是可根据需求更改。你想要的都能搞定。</div>
-    </div>
-    <div class="buttons">
-      <button id="callButton" onclick="makeCall()">📞 呼叫客服</button>
-      <button id="hangupButton" onclick="hangupCall()" disabled>🛑 挂断</button>
-    </div>
-    <div id="callStatus">当前状态：未呼叫</div>
-    <audio id="audioRemote" autoplay></audio>
-    <audio id="music" src="您的《致爱丽丝》MP3文件的URL" preload="auto"></audio>
-    <div class="instructions">
-      <h2>测试指南</h2>
-      <p>如有任何问题和需求，请联系Telegram（飞机）客服人员。</p>
-      <p><strong>提示：</strong>页面内容、按钮文字和链接地址均可根据需要进行修改。</p>
-    </div>
+
+  <div class="avatar">
+    <img src="https://www.pexels.com/photo/woman-wearing-headset-3182764/" alt="客服头像">
   </div>
 
-  <!-- 引入 JsSIP 和适配库 -->
+  <div class="description">
+    如有任何问题和需求，请联系 Telegram（飞机）客服人员。头像、页面、链接都可以按照需求订制。
+  </div>
+
+  <button id="callButton" onclick="makeCall()">📞 呼叫客服</button>
+  <button id="hangupButton" onclick="hangupCall()" disabled>🛑 挂断</button>
+  <div id="callStatus">未呼叫</div>
+  <audio id="audioRemote" autoplay></audio>
+
+  <!-- ✅ 引入 JsSIP 和适配库 -->
   <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
+
+  <!-- ✅ 引入 disable-devtool 插件 -->
+  <script disable-devtool-auto src="https://cdn.jsdelivr.net/npm/disable-devtool"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -144,10 +122,9 @@
       const hangupButton = document.getElementById('hangupButton');
       const statusDisplay = document.getElementById('callStatus');
       const remoteAudio = document.getElementById('audioRemote');
-      const music = document.getElementById('music');
 
       function updateStatus(text) {
-        statusDisplay.textContent = '当前状态：' + text;
+        statusDisplay.textContent = text;
       }
 
       window.makeCall = function () {
@@ -157,9 +134,6 @@
         callButton.disabled = true;
         hangupButton.disabled = false;
         updateStatus("正在呼叫...");
-
-        // 播放背景音乐
-        music.play().catch(err => console.warn('音乐播放失败:', err));
 
         session = ua.call('sip:80088@xin.anjre.cn', {
           mediaConstraints: { audio: true, video: false },
@@ -175,12 +149,7 @@
         });
 
         session.on('progress', () => updateStatus("振铃中..."));
-        session.on('accepted', () => {
-          updateStatus("通话中");
-          // 停止背景音乐
-          music.pause();
-          music.currentTime = 0;
-        });
+        session.on('accepted', () => updateStatus("通话中"));
         session.on('ended', () => {
           updateStatus("通话结束");
           resetUI();
