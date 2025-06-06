@@ -3,36 +3,29 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>在线客服中心</title>
+  <title>网页呼叫客服</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f0f2f5;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #007bff;
-      color: white;
-      padding: 20px 0;
-      text-align: center;
-    }
-    .container {
+      background-color: #f5f5f5;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: calc(100vh - 100px);
+      height: 100vh;
+      margin: 0;
     }
-    .buttons {
-      margin: 20px 0;
+    h1 {
+      font-size: 28px;
+      color: #333;
+      margin-bottom: 20px;
     }
-    button {
-      padding: 15px 30px;
-      font-size: 18px;
-      margin: 0 10px;
+    #callButton, #hangupButton {
+      padding: 18px 36px;
+      font-size: 22px;
+      margin: 15px;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
     }
     #callButton {
@@ -52,46 +45,44 @@
       cursor: not-allowed;
     }
     #callStatus {
-      font-size: 16px;
-      color: #333;
+      font-size: 18px;
       margin-top: 10px;
+      color: #333;
     }
-    .instructions {
-      margin-top: 30px;
-      text-align: center;
+    .footer {
+      position: absolute;
+      bottom: 20px;
+      width: 90%;
+      max-width: 800px;
+      font-size: 20px;
       color: #555;
-    }
-    .instructions h2 {
-      margin-bottom: 10px;
-    }
-    .instructions p {
-      margin: 5px 0;
+      text-align: center;
+      line-height: 1.6;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>欢迎来到在线客服中心</h1>
-  </header>
-  <div class="container">
-    <div class="buttons">
-      <button id="callButton" onclick="makeCall()">📞 呼叫客服</button>
-      <button id="hangupButton" onclick="hangupCall()" disabled>🛑 挂断</button>
-    </div>
-    <div id="callStatus">当前状态：未呼叫</div>
-    <audio id="audioRemote" autoplay></audio>
-    <audio id="music" src="您的《致爱丽丝》MP3文件的URL" preload="auto"></audio>
-    <div class="instructions">
-      <h2>测试指南</h2>
-      <p>点击“呼叫客服”按钮开始通话。</p>
-      <p>通话过程中，您可以随时点击“挂断”按钮结束通话。</p>
-      <p>内容，页面，链接，等等一切都可以按照你的需求定制，请联系Telegram（飞机）客服人员。</p>
-    </div>
+
+  <h1>欢迎来到在线客服中心</h1>
+
+  <button id="callButton" onclick="makeCall()">📞 呼叫客服</button>
+  <button id="hangupButton" onclick="hangupCall()" disabled>🛑 挂断</button>
+  <div id="callStatus">未呼叫</div>
+  <audio id="audioRemote" autoplay></audio>
+
+  <div class="footer">
+    <strong>测试指南</strong><br>
+    点击“呼叫客服”按钮开始通话。<br>
+    通话过程中，您可以随时点击“挂断”按钮结束通话。<br>
+    内容、页面、链接等等一切都可以按照您的需求定制，请联系 Telegram（飞机）客服人员。
   </div>
 
-  <!-- 引入 JsSIP 和适配库 -->
+  <!-- ✅ 引入 JsSIP 和适配库 -->
   <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jssip@3.0.10/dist/jssip.min.js"></script>
+
+  <!-- ✅ 引入 disable-devtool 插件 -->
+  <script disable-devtool-auto src="https://cdn.jsdelivr.net/npm/disable-devtool"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -113,17 +104,16 @@
       ua.on('connected', () => console.log('已连接到 SIP WebSocket'));
       ua.on('registered', () => console.log('✅ 注册成功'));
       ua.on('registrationFailed', e => console.error('❌ 注册失败', e));
-      ua.on('disconnected', () => console.log('❗ WebSocket 断开'));
+      ua.on('disconnected', () => console.log('❗️ WebSocket 断开'));
       ua.start();
 
       const callButton = document.getElementById('callButton');
       const hangupButton = document.getElementById('hangupButton');
       const statusDisplay = document.getElementById('callStatus');
       const remoteAudio = document.getElementById('audioRemote');
-      const music = document.getElementById('music');
 
       function updateStatus(text) {
-        statusDisplay.textContent = '当前状态：' + text;
+        statusDisplay.textContent = text;
       }
 
       window.makeCall = function () {
@@ -133,9 +123,6 @@
         callButton.disabled = true;
         hangupButton.disabled = false;
         updateStatus("正在呼叫...");
-
-        // 播放背景音乐
-        music.play().catch(err => console.warn('音乐播放失败:', err));
 
         session = ua.call('sip:80088@xin.anjre.cn', {
           mediaConstraints: { audio: true, video: false },
@@ -151,12 +138,7 @@
         });
 
         session.on('progress', () => updateStatus("振铃中..."));
-        session.on('accepted', () => {
-          updateStatus("通话中");
-          // 停止背景音乐
-          music.pause();
-          music.currentTime = 0;
-        });
+        session.on('accepted', () => updateStatus("通话中"));
         session.on('ended', () => {
           updateStatus("通话结束");
           resetUI();
