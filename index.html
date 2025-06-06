@@ -22,7 +22,28 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: calc(100vh - 100px);
+      padding: 20px;
+    }
+    .avatar-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background-color: #ccc;
+      background-image: url('您的客服头像图片URL');
+      background-size: cover;
+      background-position: center;
+      margin-bottom: 10px;
+    }
+    .avatar-text {
+      font-size: 16px;
+      color: #555;
+      text-align: center;
     }
     .buttons {
       margin: 20px 0;
@@ -74,6 +95,10 @@
     <h1>欢迎来到在线客服中心</h1>
   </header>
   <div class="container">
+    <div class="avatar-container">
+      <div class="avatar"></div>
+      <div class="avatar-text">链接内容是可根据需求更改。你想要的都能搞定。</div>
+    </div>
     <div class="buttons">
       <button id="callButton" onclick="makeCall()">📞 呼叫客服</button>
       <button id="hangupButton" onclick="hangupCall()" disabled>🛑 挂断</button>
@@ -82,10 +107,8 @@
     <audio id="audioRemote" autoplay></audio>
     <audio id="music" src="您的《致爱丽丝》MP3文件的URL" preload="auto"></audio>
     <div class="instructions">
-      <h2>操作指南</h2>
-      <p>点击“呼叫客服”按钮开始通话。</p>
-      <p>通话过程中，您可以随时点击“挂断”按钮结束通话。</p>
-      <p>如有任何问题，请联系客服人员。</p>
+      <h2>测试指南</h2>
+      <p>如有任何问题和需求，请联系Telegram（飞机）客服人员。</p>
       <p><strong>提示：</strong>页面内容、按钮文字和链接地址均可根据需要进行修改。</p>
     </div>
   </div>
