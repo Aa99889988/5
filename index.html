@@ -68,9 +68,13 @@
       background: linear-gradient(90deg, #4a90e2, #2d73c5);
       color: white;
     }
-    #batteryOptButton {
-      background: linear-gradient(90deg, #ffa500, #ffcc00);
-      color: black;
+    #batteryOptBtn {
+      background: linear-gradient(90deg, #f5a623, #f7d358);
+      color: #333;
+    }
+    #backgroundPlayBtn {
+      background: linear-gradient(90deg, #7ed6df, #3742fa);
+      color: white;
     }
     #callStatus {
       margin-top: 18px;
@@ -113,8 +117,11 @@
     <!-- QQ 智能跳转按钮 -->
     <button id="qqButton" onclick="smartOpenQQ()">🐧 联系客服QQ</button>
 
-    <!-- 电池优化设置跳转按钮 -->
-    <button id="batteryOptButton" onclick="openBatteryOptimization()">⚡ 电池优化设置</button>
+    <!-- 跳转电池优化设置按钮 -->
+    <button id="batteryOptBtn" onclick="openBatteryOptimization()">⚡ 关闭电池优化</button>
+
+    <!-- 后台播放设置提示按钮 -->
+    <button id="backgroundPlayBtn" onclick="openBackgroundPlayTip()">🔈 后台播放设置提示</button>
 
     <div id="callStatus">点击呼叫客服，或联系 QQ 客服</div>
   </div>
@@ -146,13 +153,17 @@
     }
 
     function openBatteryOptimization() {
-      // 安卓特有 Intent Scheme 打开电池优化页面
-      window.location.href = "intent:#Intent;action=android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS;end";
+      // 安卓 Intent 方案跳转电池优化页面，iOS 无效
+      if (/android/i.test(navigator.userAgent)) {
+        // 这是个常用的跳转电池优化设置的 Intent
+        window.location.href = "intent:#Intent;action=android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS;end";
+      } else {
+        alert("请手动关闭电池优化，iOS设备暂不支持自动跳转。");
+      }
+    }
 
-      // iOS没有对应接口，给用户提示
-      setTimeout(() => {
-        alert("请手动前往系统设置，关闭电池优化以保证通话后台正常");
-      }, 2000);
+    function openBackgroundPlayTip() {
+      alert("请在浏览器设置中允许此网页后台播放音频，以保证通话不中断。");
     }
   </script>
 </body>
