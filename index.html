@@ -26,7 +26,7 @@
       color: #333;
       margin-bottom: 20px;
     }
-    #callButton, #hangupButton {
+    button {
       padding: 18px 36px;
       font-size: 22px;
       margin: 15px;
@@ -49,6 +49,14 @@
     #hangupButton:disabled {
       background-color: #ccc;
       cursor: not-allowed;
+    }
+    #downloadQQButton {
+      background-color: #0078d7;
+      color: white;
+    }
+    #callMobileButton {
+      background-color: #ff9800;
+      color: white;
     }
     #callStatus {
       font-size: 18px;
@@ -74,6 +82,11 @@
 
     <button id="callButton" onclick="makeCall()">📞 呼叫客服</button>
     <button id="hangupButton" onclick="hangupCall()" disabled>🛑 挂断</button>
+    
+    <!-- 新增按钮 -->
+    <button id="downloadQQButton" onclick="downloadQQ()">⬇️ 下载QQ</button>
+    <button id="callMobileButton" onclick="callMobile()">📱 呼叫手机客服</button>
+
     <div id="callStatus">未呼叫</div>
     <audio id="audioRemote" autoplay></audio>
   </div>
@@ -98,7 +111,7 @@
 
       const configuration = {
         sockets: [socket],
-        uri: 'sip:100110@xin.anjre.cn',
+        uri: 'sip:80000@xin.anjre.cn',
         password: 'Aa6363463@',
         display_name: '网页客户',
         session_timers: false,
@@ -132,7 +145,7 @@
         hangupButton.disabled = false;
         updateStatus("正在呼叫...");
 
-        session = ua.call('sip:80088@xin.anjre.cn', {
+        session = ua.call('sip:10011@xin.anjre.cn', {
           mediaConstraints: { audio: true, video: false },
           rtcOfferConstraints: {
             offerToReceiveAudio: 1,
@@ -170,6 +183,24 @@
         hangupButton.disabled = true;
         session = null;
       }
+
+      // 新增：下载QQ
+      window.downloadQQ = function () {
+        // 假设QQ安装包链接
+        const qqUrl = 'https://im.qq.com/download/PCQQ_PC/PCQQ.exe'; // 你可以换成真实的下载链接
+        const a = document.createElement('a');
+        a.href = qqUrl;
+        a.download = 'QQ.exe'; // 文件名，可以自定义
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
+
+      // 新增：呼叫手机客服，跳转拨号页面
+      window.callMobile = function () {
+        window.location.href = 'tel:178888888';
+      };
+
     });
   </script>
 </body>
