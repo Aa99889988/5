@@ -106,20 +106,37 @@
       <button id="callButton">📞 呼叫客服</button>
     </a>
     
-    <!-- QQ 下载按钮 -->
-    <a href="https://im.qq.com/mobileqq/" target="_blank">
-      <button id="qqButton">🐧 下载 QQ 客户端</button>
-    </a>
+    <!-- QQ 智能跳转按钮 -->
+    <button id="qqButton" onclick="smartOpenQQ()">🐧 联系客服QQ</button>
 
-    <div id="callStatus">点击呼叫客服，或下载安装 QQ</div>
+    <div id="callStatus">点击呼叫客服，或联系 QQ 客服</div>
   </div>
 
   <div class="footer">
     <strong>温馨提示：</strong><br>
     您正在使用抖音官方在线客服页面。点击“呼叫客服”按钮将直接拨打客服电话。<br>
-    如需联系客服 QQ，请点击下方企鹅图标下载安装 QQ。客服服务时间：9:00-21:00（节假日无休）<br>
+    如需联系客服 QQ，请点击下方企鹅图标，我们将优先尝试打开 QQ；若未安装将跳转下载。<br>
+    客服服务时间：9:00-21:00（节假日无休）<br>
     <span style="color:#666;font-size:13px;display:block;margin-top:8px;">© 2025 抖音 版权所有</span>
   </div>
 
+  <script>
+    function smartOpenQQ() {
+      const qqURL = "mqqwpa://im/chat?chat_type=wpa&uin=123456789&version=1&src_type=web";
+      const downloadURL = "https://im.qq.com/mobileqq/";
+
+      const fallback = setTimeout(() => {
+        window.location.href = downloadURL;
+      }, 2000);
+
+      window.location.href = qqURL;
+
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+          clearTimeout(fallback);
+        }
+      });
+    }
+  </script>
 </body>
 </html>
